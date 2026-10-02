@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Investment Analyst MVP</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:1100px;margin:0 auto;padding:24px;background:#f5f6f8;color:#17202a}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.card{background:white;border-radius:14px;padding:18px;box-shadow:0 2px 12px #0001}
+    input,button{padding:10px;border:1px solid #ccd2d8;border-radius:9px}button{cursor:pointer}.big{font-size:30px;font-weight:700}.muted{color:#68737d}pre{white-space:pre-wrap}
+  </style>
+</head>
+<body>
+<h1>Investment Analyst</h1>
+<p class="muted">MVP de análisis. No ejecuta operaciones reales.</p>
+<div class="card">
+  <label>Activo <input id="symbol" value="AAPL"></label>
+  <label>Capital € <input id="capital" type="number" value="1000"></label>
+  <label>Riesgo por operación % <input id="risk" type="number" step="0.1" value="1"></label>
+  <button onclick="run()">Analizar</button>
+</div>
+<div id="out" class="grid" style="margin-top:16px"></div>
+<script>
+async function run(){
+ const s=document.getElementById('symbol').value.trim(); const c=document.getElementById('capital').value; const r=document.getElementById('risk').value;
+ const out=document.getElementById('out'); out.innerHTML='<div class="card">Cargando datos…</div>';
+ try{const x=await fetch(`/api/analyze/${encodeURIComponent(s)}?capital=${c}&risk=${r}`).then(v=>v.json());
+ if(x.error) throw Error(x.error);
+ out.innerHTML=`
+ <div class="card"><div class="muted">Decisión</div><div class="big">${x.action}</div><p>Puntuación interna: ${x.score}/100</p></div>
+ <div class="card"><div class="muted">Precio</div><div class="big">${x.indicators.price.toFixed(2)}</div><p>Zona: ${x.entry_zone[0]} – ${x.entry_zone[1]}</p></div>
+ <div class="card"><div class="muted">Capital</div><p>Entrada orientativa: <b>${x.suggested_amount} €</b></p><p>Riesgo monetario: ${x.risk_amount} €</p></div>
+ <div class="card"><div class="muted">Indicadores</div><p>RSI: ${x.indicators.rsi14?.toFixed(1) ?? 'N/D'}</p><p>SMA20: ${x.indicators.sma20?.toFixed(2) ?? 'N/D'}</p><p>SMA50: ${x.indicators.sma50?.toFixed(2) ?? 'N/D'}</p><p>SMA200: ${x.indicators.sma200?.toFixed(2) ?? 'N/D'}</p></div>
+ <div class="card"><div class="muted">Factores</div><pre>${JSON.stringify(x.factors,null,2)}</pre></div>
+ <div class="card"><div class="muted">Razones y datos</div><ul>${x.reasons.map(v=>`<li>${v}</li>`).join('')}</ul><p class="muted">Actualizado: ${x.updated_at}</p><p class="muted">Fuente: ${x.data_source}</p></div>`;
+ }catch(e){out.innerHTML=`<div class="card">Error: ${e.message}</div>`}
+}
+</script>
+</body></html>
